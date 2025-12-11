@@ -3,7 +3,6 @@ package eventee.server.content.domain.comment.service;
 import eventee.server.content.domain.comment.dto.CommentRequest;
 import eventee.server.content.domain.comment.model.Comment;
 import eventee.server.content.domain.comment.repository.CommentRepository;
-import eventee.server.content.domain.member.model.Member;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.domain.post.repository.PostRepository;
 import eventee.server.content.global.exception.BaseException;
@@ -23,14 +22,14 @@ public class CommentServiceImpl implements CommentService{
 
 
     @Transactional
-    public void makeComment(CommentRequest.CommentDto request,Member member){
+    public void makeComment(CommentRequest.CommentDto request, Long memberId){
 
         Post post = loadPostById(request.postId());
 
         Comment comment = Comment.builder()
                 .content(request.content())
                 .post(post)
-                .member(member)
+                .writerId(memberId)
                 .build();
 
         post.addComment(commentRepository.save(comment));

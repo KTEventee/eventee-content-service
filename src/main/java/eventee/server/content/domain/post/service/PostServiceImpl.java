@@ -26,9 +26,7 @@ import java.util.Optional;
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
-    private final GroupRepository groupRepository;
     private final VoteLogRepository voteLogRepository;
-    private final EventRepository eventRepository;
 
     private String normalizeContent(String content) {
         if (content == null) return null;
@@ -45,11 +43,8 @@ public class PostServiceImpl implements PostService {
     }
 
     @Transactional
-    public Post makePost(PostRequest.PostDto request, Member member) {
-
-        Group group = groupRepository.findGroupByGroupId(request.groupId())
-            .orElseThrow(() -> new BaseException(ErrorCode.GROUP_NOT_FOUND));
-
+    public Post makePost(PostRequest.PostDto request, Long memberId) {
+        Long groupId = null;
         PostType postType = PostType.from(request.type());
 
         String normalizedVoteContent = normalizeContent(request.voteContent());
@@ -57,28 +52,23 @@ public class PostServiceImpl implements PostService {
         Post post = Post.builder()
             .content(request.content())
             .type(postType)
-            .group(group)
-            .member(member)
+            .groupId(groupId)
+                .eventId(request.eventId())
+            .memberId(memberId)
             .voteTitle(request.voteTitle())
             .voteContent(normalizedVoteContent)
             .build();
-
-        group.addPost(post);
         return postRepository.save(post);
     }
 
     @Transactional
     public void deletePost(long id) {
         Post post = loadPostById(id);
-        Group group = post.getGroup();
-
-        group.deletePost(post);
         postRepository.delete(post);
-        groupRepository.save(group);
     }
 
     @Transactional
-    public PostResponse.PostDto updatePost(PostRequest.PostDto request, Member member, Long postId) {
+    public PostResponse.PostDto updatePost(PostRequest.PostDto request, Long memberId, Long postId) {
 
         Post post = loadPostById(postId);
 
@@ -94,6 +84,7 @@ public class PostServiceImpl implements PostService {
 
         PostRequest.PostDto normalizedRequest = new PostRequest.PostDto(
             request.groupId(),
+            request.eventId(),
             normalizedType,
             request.content(),
             voteTitle,
@@ -103,7 +94,7 @@ public class PostServiceImpl implements PostService {
         post.updatePost(normalizedRequest);
         Post saved = postRepository.save(post);
 
-        return PostResponse.PostDto.from(saved, member);
+        return PostResponse.PostDto.from(saved, memberId);
     }
 
     private Post loadPostById(long id) {
@@ -111,17 +102,12 @@ public class PostServiceImpl implements PostService {
             .orElseThrow(() -> new BaseException(ErrorCode.POST_NOT_FOUND));
     }
 
-    public PostResponse.PostListByGroupDto getPostByEvent(long eventId, Member member) {
-        Event event = eventRepository.findByIdAndIsDeletedFalse(eventId)
-            .orElseThrow(() -> new EventHandler(EventErrorStatus.EVENT_NOT_FOUND));
-
-        List<Group> groups = event.getGroups();
-        log.info("groups:{}", groups.toString());
-
-        return PostResponse.PostListByGroupDto.from(groups, member);
+    public PostResponse.PostListByGroupDto getPostByEvent(long eventId, Long memberId) {
+        List<Post> posts = postRepository.findPostsByEventId(eventId);
+        return PostResponse.PostListByGroupDto.from(posts, memberId);
     }
 
-    public VoteLogResponseDto vote(PostRequest.VoteDto request, Member member) {
+    public VoteLogResponseDto vote(PostRequest.VoteDto request, Long memberId) {
 
         Post post = loadPostById(request.postId());
 
@@ -129,7 +115,7 @@ public class PostServiceImpl implements PostService {
             throw new BaseException(ErrorCode.POST_TYPE_NOT_VOTE);
         }
 
-        Optional<VoteLog> checkLog = voteLogRepository.findVoteLogByMemberAndPost(member, post);
+        Optional<VoteLog> checkLog = voteLogRepository.findVoteLogByMemberIdAndPost(memberId, post);
         if (checkLog.isPresent()) throw new BaseException(ErrorCode.VOTE_ALREADY_DO);
 
         String[] options = parseOptions(post.getVoteContent());
@@ -141,7 +127,7 @@ public class PostServiceImpl implements PostService {
 
         VoteLog log = VoteLog.builder()
             .post(post)
-            .member(member)
+            .memberId(memberId)
             .voteNum(num)
             .word(request.voteText())
             .build();
@@ -151,17 +137,15 @@ public class PostServiceImpl implements PostService {
         voteLogRepository.save(log);
         postRepository.save(post);
 
-        return VoteLogResponseDto.from(post.getVoteLogs(), member);
+        return VoteLogResponseDto.from(post.getVoteLogs(), memberId);
     }
 
     @Transactional
-    public void adminPost(PostRequest.AdminPostDto request, Member member) {
+    public void adminPost(PostRequest.AdminPostDto request, Long memberId) {
 
         List<Long> groupIds = Arrays.stream(request.groupNums().split("_"))
             .map(Long::parseLong)
             .toList();
-
-        List<Group> groups = groupRepository.findByGroupIdIn(groupIds);
 
         PostType postType = PostType.from(request.type());
 
@@ -169,17 +153,16 @@ public class PostServiceImpl implements PostService {
 
         List<Post> posts = new ArrayList<>();
 
-        groups.forEach(g -> {
+        groupIds.forEach(g -> {
             Post post = Post.builder()
                 .content(request.content())
                 .type(postType)
-                .group(g)
-                .member(member)
+                .groupId(g)
+                .memberId(memberId)
                 .voteTitle(request.voteTitle())
                 .voteContent(normalizedVoteContent)
                 .build();
             posts.add(post);
-            g.addPost(post);
         });
 
         postRepository.saveAll(posts);

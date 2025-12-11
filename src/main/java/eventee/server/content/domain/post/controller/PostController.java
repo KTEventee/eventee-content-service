@@ -1,13 +1,11 @@
 package eventee.server.content.domain.post.controller;
 
-import eventee.server.content.domain.member.model.Member;
 import eventee.server.content.domain.post.dto.PostRequest;
 import eventee.server.content.domain.post.dto.PostResponse;
 import eventee.server.content.domain.post.dto.VoteLogResponseDto;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.domain.post.service.PostService;
 import eventee.server.content.global.exception.BaseResponse;
-import eventee.server.content.global.filter.CurrentMember;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,11 +36,11 @@ public class PostController {
     )
     @PostMapping
     public BaseResponse<PostResponse.PostDto> createPost(
-        @RequestBody @Schema(description = "게시글 생성 요청 DTO") PostRequest.PostDto request,
-        @CurrentMember Member member
+        @RequestBody @Schema(description = "게시글 생성 요청 DTO") PostRequest.PostDto request
     ) {
-        Post post = postService.makePost(request, member);
-        return BaseResponse.onSuccess(PostResponse.PostDto.from(post, member));
+        Long memberId = null;
+        Post post = postService.makePost(request, memberId);
+        return BaseResponse.onSuccess(PostResponse.PostDto.from(post, memberId));
     }
 
 
@@ -63,10 +61,10 @@ public class PostController {
     @PatchMapping("/{postId}")
     public BaseResponse<PostResponse.PostDto> updatePost(
         @PathVariable @Schema(description = "게시글 ID") Long postId,
-        @RequestBody @Schema(description = "게시글 수정 요청 DTO") PostRequest.PostDto request,
-        @CurrentMember Member member
+        @RequestBody @Schema(description = "게시글 수정 요청 DTO") PostRequest.PostDto request
     ) {
-        PostResponse.PostDto updated = postService.updatePost(request, member, postId);
+        Long memberId = null;
+        PostResponse.PostDto updated = postService.updatePost(request, memberId, postId);
         return BaseResponse.onSuccess(updated);
     }
 
@@ -80,10 +78,10 @@ public class PostController {
     )
     @GetMapping("/{eventId}")
     public BaseResponse<PostResponse.PostListByGroupDto> getPostByEvent(
-        @PathVariable @Schema(description = "이벤트 ID") Long eventId,
-        @CurrentMember Member member
+        @PathVariable @Schema(description = "이벤트 ID") Long eventId
     ) {
-        return BaseResponse.onSuccess(postService.getPostByEvent(eventId, member));
+        Long memberId = null;
+        return BaseResponse.onSuccess(postService.getPostByEvent(eventId, memberId));
     }
 
 
@@ -97,10 +95,10 @@ public class PostController {
     )
     @PostMapping("/vote")
     public BaseResponse<VoteLogResponseDto> vote(
-        @RequestBody @Schema(description = "투표 요청 DTO") PostRequest.VoteDto request,
-        @CurrentMember Member member
+        @RequestBody @Schema(description = "투표 요청 DTO") PostRequest.VoteDto request
     ) {
-        return BaseResponse.onSuccess(postService.vote(request, member));
+        Long memberId = null;
+        return BaseResponse.onSuccess(postService.vote(request, memberId));
     }
 
 
@@ -113,10 +111,10 @@ public class PostController {
     )
     @PostMapping("/admin")
     public BaseResponse<String> adminPost(
-        @RequestBody @Schema(description = "관리자 게시글 요청 DTO") PostRequest.AdminPostDto request,
-        @CurrentMember Member member
+        @RequestBody @Schema(description = "관리자 게시글 요청 DTO") PostRequest.AdminPostDto request
     ) {
-        postService.adminPost(request, member);
+        Long memberId = null;
+        postService.adminPost(request, memberId);
         return BaseResponse.onSuccess("success");
     }
 }

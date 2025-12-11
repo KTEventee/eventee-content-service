@@ -1,6 +1,5 @@
 package eventee.server.content.domain.post.model;
 
-import eventee.server.content.domain.member.model.Member;
 import eventee.server.content.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,9 +20,7 @@ public class VoteLog extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long voteLogId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    private Long memberId;
 
     private String voteWord;
     private int voteNum;
@@ -33,10 +30,10 @@ public class VoteLog extends BaseEntity {
     private Post post;
 
     @Builder
-    public VoteLog(String word, Post post,Member member,int voteNum){
+    public VoteLog(String word, Post post, Long memberId, int voteNum){
         this.voteWord = word;
         this.post = post;
-        this.member = member;
+        this.memberId = memberId;
         this.voteNum = voteNum;
     }
 }

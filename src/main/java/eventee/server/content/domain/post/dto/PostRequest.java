@@ -10,6 +10,9 @@ public class PostRequest {
             @Schema(description = "그룹 ID", example = "4")
             Long groupId,
 
+            @Schema(description = "이벤트 ID", example = "7")
+            Long eventId,
+
             @Schema(description = "게시글 타입(TEXT 또는 VOTE)", example = "TEXT")
             String type,
 

@@ -1,8 +1,6 @@
 package eventee.server.content.domain.post.model;
 
 import eventee.server.content.domain.comment.model.Comment;
-import eventee.server.content.domain.group.model.Group;
-import eventee.server.content.domain.member.model.Member;
 import eventee.server.content.domain.post.dto.PostRequest;
 import eventee.server.content.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -28,10 +26,7 @@ public class Post extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private Member member;
+    private Long memberId;
 
     private String content;
     private String voteTitle = null;
@@ -39,9 +34,8 @@ public class Post extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private PostType postType;
-
-    @ManyToOne
-    private Group group;
+    private Long groupId;
+    private Long eventId;
 
     @OneToMany(mappedBy = "post")
     private List<VoteLog> voteLogs = new ArrayList<>();
@@ -70,11 +64,12 @@ public class Post extends BaseEntity {
     }
 
     @Builder
-    public Post(String content, PostType type,Group group,String voteTitle,String voteContent,Member member){
+    public Post(String content, PostType type, Long groupId, String voteTitle, String voteContent,Long eventId, Long memberId){
         this.content = content;
         this.postType = type;
-        this.member = member;
-        this.group = group;
+        this.memberId = memberId;
+        this.eventId = eventId;
+        this.groupId = groupId;
         if(this.postType.equals(PostType.VOTE)) {
             this.voteTitle = voteTitle;
             this.voteContent = voteContent;

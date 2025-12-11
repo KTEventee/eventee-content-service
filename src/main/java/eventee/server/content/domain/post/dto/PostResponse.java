@@ -1,15 +1,16 @@
 package eventee.server.content.domain.post.dto;
 
+import eventee.server.content.domain.client.member.MemberListDto;
 import eventee.server.content.domain.comment.dto.CommentResponse;
-import eventee.server.content.domain.group.model.Group;
-import eventee.server.content.domain.member.model.Member;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.domain.post.model.PostType;
 import eventee.server.content.domain.post.model.VoteLog;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PostResponse {
@@ -27,7 +28,7 @@ public class PostResponse {
     public record PostDto(
         @Schema(description = "게시글 ID", example = "10") long postId,
         @Schema(description = "내용") String content,
-        @Schema(description = "작성자 닉네임") String writerName,
+        @Schema(description = "작성자 ID") Long writerId,
         @Schema(description = "게시글 타입 (text, vote)") String type,
         @Schema(description = "투표 질문") String voteTitle,
         @Schema(description = "투표 옵션 리스트") List<VoteOptionDto> voteOptions,
@@ -35,12 +36,10 @@ public class PostResponse {
         @Schema(description = "내가 작성한 글인지 여부") boolean isWrite
     ) {
 
-        public static PostDto from(Post post, Member member) {
-
-            String writer = post.getMember().getNickname();
+        public static PostDto from(Post post, Long memberId) {
 
             List<CommentResponse.CommentDto> comments =
-                CommentResponse.CommentDto.from(post.getComments(), member);
+                CommentResponse.CommentDto.from(post.getComments(), memberId);
 
             List<VoteOptionDto> voteOptionDtos = new ArrayList<>();
 
@@ -68,7 +67,7 @@ public class PostResponse {
 
                     boolean isMine = logs.stream()
                         .anyMatch(v ->
-                            v.getMember().getId().equals(member.getId()) &&
+                            v.getMemberId().equals(memberId) &&
                                 v.getVoteNum() == optionNo
                         );
 
@@ -82,45 +81,56 @@ public class PostResponse {
             return new PostDto(
                 post.getPostId(),
                 post.getContent(),
-                writer,
+                post.getMemberId(),
                 post.getPostType().type.toLowerCase(),
                 post.getVoteTitle(),
                 voteOptionDtos,
                 comments,
-                member.getNickname().equals(writer)
+                    post.getMemberId().equals(memberId)
             );
         }
 
 
-        public static List<PostDto> from(List<Post> posts, Member member) {
+        public static List<PostDto> from(List<Post> posts, Long memberId) {
             return posts.stream()
-                .map(post -> PostDto.from(post, member))
+                .map(post -> PostDto.from(post, memberId))
                 .collect(Collectors.toList());
         }
     }
 
     @Schema(description = "그룹별 게시글 리스트 DTO")
     public record PostListDto(
-        @Schema(description = "그룹 번호", example = "1") int groupNum,
-        @Schema(description = "게시글 리스트") List<PostDto> posts
+            @Schema(description = "그룹 번호", example = "1") Long groupNum,
+            @Schema(description = "게시글 리스트") List<PostDto> posts
     ) {
-        public static PostListDto from(Group g, Member member) {
+        public static PostListDto of(Long groupNum, List<Post> posts, Long memberId) {
             return new PostListDto(
-                g.getGroupNo(),
-                g.getPosts().stream().map(post -> PostDto.from(post, member)).toList()
+                    groupNum,
+                    posts.stream()
+                            .map(post -> PostDto.from(post, memberId))
+                            .toList()
             );
         }
     }
 
     @Schema(description = "이벤트 내 전체 그룹 게시글 리스트 DTO")
     public record PostListByGroupDto(
-        @Schema(description = "그룹 게시글 목록 리스트") List<PostListDto> lists
+            @Schema(description = "그룹 게시글 목록 리스트") List<PostListDto> lists
     ) {
-        public static PostListByGroupDto from(List<Group> groups, Member member) {
-            List<PostListDto> listDtos = new ArrayList<>();
-            for (Group g : groups) {
-                listDtos.add(PostListDto.from(g, member));
-            }
+        public static PostListByGroupDto from(List<Post> posts, Long memberId) {
+            // groupId 기준으로 묶기
+            Map<Long, List<Post>> grouped = posts.stream()
+                    .collect(Collectors.groupingBy(Post::getGroupId));
+
+            List<PostListDto> listDtos = grouped.entrySet().stream()
+                    .map(entry -> PostListDto.of(
+                            entry.getKey(),
+                            entry.getValue(),
+                            memberId
+                    ))
+                    .sorted(Comparator.comparing(PostListDto::groupNum))
+                    .toList();
+
             return new PostListByGroupDto(listDtos);
         }
     }

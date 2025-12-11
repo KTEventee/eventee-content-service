@@ -1,5 +1,6 @@
 package eventee.server.content.domain.comment.controller;
 
+import eventee.server.content.domain.client.member.MemberListDto;
 import eventee.server.content.domain.comment.dto.CommentRequest;
 import eventee.server.content.domain.comment.service.CommentService;
 import eventee.server.content.global.exception.BaseException;
@@ -43,11 +44,11 @@ public class CommentController {
     )
     @PostMapping
     public BaseResponse<String> makeComment(
-        @RequestBody CommentRequest.CommentDto request,
-        @CurrentMember Member member
+        @RequestBody CommentRequest.CommentDto request
     ){
         try{
-            commentService.makeComment(request, member);
+            Long memberId = null;
+            commentService.makeComment(request, memberId);
             return BaseResponse.onSuccess("success");
         }catch(BaseException e){
             return BaseResponse.onFailure(e.getCode(), null);

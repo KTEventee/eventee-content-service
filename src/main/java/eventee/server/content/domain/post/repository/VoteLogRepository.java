@@ -1,6 +1,6 @@
 package eventee.server.content.domain.post.repository;
 
-import eventee.server.content.domain.member.model.Member;
+import eventee.server.content.domain.client.member.MemberListDto;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.domain.post.model.VoteLog;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface VoteLogRepository extends JpaRepository<VoteLog,Long> {
-    Optional<VoteLog> findVoteLogByMemberAndPost(Member member, Post post);
+    Optional<VoteLog> findVoteLogByMemberIdAndPost(Long memberId, Post post);
 }

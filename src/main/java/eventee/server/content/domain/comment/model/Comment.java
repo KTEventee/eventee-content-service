@@ -1,7 +1,6 @@
 package eventee.server.content.domain.comment.model;
 
 import eventee.server.content.domain.comment.dto.CommentRequest;
-import eventee.server.content.domain.member.model.Member;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -23,21 +22,17 @@ public class Comment extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "comment_id")
     private Long commentId;
-
-    //fixme 댓글 작성자
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    private Long writerId;
     private String content;
 
     @ManyToOne
     private Post post;
 
     @Builder
-    public Comment(String content, Post post, Member member){
+    public Comment(String content, Post post, Long writerId){
         this.content = content;
         this.post = post;
-        this.member = member;
+        this.writerId = writerId;
     }
 
     public void updateComment(CommentRequest.CommentUpdateDto dto){
