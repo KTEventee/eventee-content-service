@@ -2,7 +2,7 @@ package eventee.server.content.domain.comment.model;
 
 import eventee.server.content.domain.comment.dto.CommentRequest;
 import eventee.server.content.domain.post.model.Post;
-import eventee.server.content.global.entity.BaseEntity;
+import eventee.server.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

@@ -22,25 +22,38 @@ configurations {
 
 repositories {
 	mavenCentral()
+
+	maven {
+		name = 'GitHubPackages'
+		url = uri("https://maven.pkg.github.com/KTEventee/eventee-common")
+		credentials {
+			username = project.findProperty("gpr.user") ?: System.getenv("COMMON_USERNAME_GITHUB")
+			password = project.findProperty("gpr.token") ?: System.getenv("COMMON_TOKEN_GITHUB")
+		}
+	}
+
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'eventee.server:common:0.0.1-SNAPSHOT'
+
+	// 스프링 스타터
+	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// 롬복
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
-	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
-
-	//jwt
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
-	implementation 'io.jsonwebtoken:jjwt-impl:0.12.5'
-	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.5'
-
-	//oauth
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+//	//jwt
+//	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+//	implementation 'io.jsonwebtoken:jjwt-impl:0.12.5'
+//	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+//
+//	//oauth
+//	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
 	//swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
@@ -53,22 +66,13 @@ dependencies {
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+
 	// S3
 	implementation 'software.amazon.awssdk:sts'          // IAM 역할 기반 인증
 	implementation platform("software.amazon.awssdk:bom:2.25.61")
 	implementation "software.amazon.awssdk:s3"
-	implementation "software.amazon.awssdk:sts"
-
-	// actuator
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-	//prometheus
-	runtimeOnly "io.micrometer:micrometer-registry-prometheus"
-
-	//loki4j
-	implementation 'com.github.loki4j:loki-logback-appender:1.5.1'
-
-	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.3'
 
 }
 

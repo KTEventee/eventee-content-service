@@ -1,7 +1,7 @@
 package eventee.server.content.domain.post.model;
 
-import eventee.server.content.global.exception.BaseException;
-import eventee.server.content.global.exception.codes.ErrorCode;
+import eventee.server.common.exception.BaseException;
+import eventee.server.common.exception.codes.ErrorCode;
 import lombok.Getter;
 
 import java.util.Arrays;

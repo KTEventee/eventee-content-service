@@ -1,6 +1,6 @@
 package eventee.server.content.domain.post.model;
 
-import eventee.server.content.global.entity.BaseEntity;
+import eventee.server.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

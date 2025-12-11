@@ -1,11 +1,10 @@
 package eventee.server.content.domain.comment.controller;
 
-import eventee.server.content.domain.client.member.MemberListDto;
 import eventee.server.content.domain.comment.dto.CommentRequest;
 import eventee.server.content.domain.comment.service.CommentService;
-import eventee.server.content.global.exception.BaseException;
-import eventee.server.content.global.exception.BaseResponse;
-import eventee.server.content.global.exception.codes.ErrorCode;
+import eventee.server.common.exception.BaseException;
+import eventee.server.common.exception.BaseResponse;
+import eventee.server.common.exception.codes.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

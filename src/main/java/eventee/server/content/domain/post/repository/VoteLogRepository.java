@@ -1,6 +1,5 @@
 package eventee.server.content.domain.post.repository;
 
-import eventee.server.content.domain.client.member.MemberListDto;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.domain.post.model.VoteLog;
 import org.springframework.data.jpa.repository.JpaRepository;

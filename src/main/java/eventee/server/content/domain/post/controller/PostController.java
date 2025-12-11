@@ -5,7 +5,7 @@ import eventee.server.content.domain.post.dto.PostResponse;
 import eventee.server.content.domain.post.dto.VoteLogResponseDto;
 import eventee.server.content.domain.post.model.Post;
 import eventee.server.content.domain.post.service.PostService;
-import eventee.server.content.global.exception.BaseResponse;
+import eventee.server.common.exception.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
