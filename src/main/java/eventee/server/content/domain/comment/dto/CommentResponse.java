@@ -1,6 +1,5 @@
 package eventee.server.content.domain.comment.dto;
 
-import eventee.server.content.domain.client.member.MemberListDto;
 import eventee.server.content.domain.comment.model.Comment;
 import io.swagger.v3.oas.annotations.media.Schema;
 

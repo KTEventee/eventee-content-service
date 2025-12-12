@@ -17,7 +17,6 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 *.properties
-build.gradle
 src/main/java/eventee/server/event/global
 
 ### IntelliJ IDEA ###
