@@ -1,0 +1,105 @@
+name: CI/CD - coontent
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+
+permissions:
+  contents: read
+  packages: write 
+
+env:
+  IMAGE_NAME: ghcr.io/kteventee/content   # GitHub Packages(GHCR)에 올라갈 이미지 이름
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Debug workspace & Gradle projects
+        run: |
+          echo "=== pwd ==="
+          pwd
+          echo "=== ls ==="
+          ls
+          echo "=== settings.gradle ==="
+          cat settings.gradle || echo "no settings.gradle"
+          echo "=== build.gradle ==="
+          cat build.gradle || echo "no build.gradle"
+          echo "=== Gradle projects ==="
+          ./gradlew -q projects
+        
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build & Test with Gradle
+        env:
+          COMMON_USERNAME_GITHUB: ${{ github.actor }}
+          COMMON_TOKEN_GITHUB: ${{ secrets.COMMON_TOKEN_GITHUB }}  
+        run: ./gradlew bootJar
+
+      - name: Upload bootJar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-app-jar
+          path: build/libs/*.jar
+
+  docker-build-and-push:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download bootJar artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: content-app-jar
+          path: build/libs
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.COMMON_TOKEN_GITHUB }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker images (develop-latest & develop-sha-*)
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+        run: |
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+
+          echo "Building images:"
+          echo "  ${IMAGE_NAME}:develop-latest"
+          echo "  ${IMAGE_NAME}:develop-sha-${SHORT_SHA}"
+
+          docker build \
+            -t "${IMAGE_NAME}:develop-latest" \
+            -t "${IMAGE_NAME}:develop-sha-${SHORT_SHA}" .
+
+      - name: Push Docker images to GitHub Packages
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+        run: |
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+
+          docker push "${IMAGE_NAME}:develop-latest"
+          docker push "${IMAGE_NAME}:develop-sha-${SHORT_SHA}"
