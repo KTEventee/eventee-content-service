@@ -1,9 +1,10 @@
-FROM eclipse-temurin:17-jre
-WORKDIR /app
+FROM amazoncorretto:17-alpine3.22
 
-# GitHub Actions에서 미리 빌드해 둔 jar를 COPY
+RUN addgroup -S app && adduser -S app -G app
+WORKDIR /home/app
 COPY build/libs/*.jar app.jar
 
-EXPOSE 8080
+RUN chown -R app:app /home/app
+USER app
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

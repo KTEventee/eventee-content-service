@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/comment")
+@RequestMapping("/comments")
 @Tag(name = "Comment", description = "댓글 API")
 @Slf4j
 public class CommentController {
