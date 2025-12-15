@@ -65,7 +65,7 @@ jobs:
       - name: Update event image tag in GitOps
         run: |
           cd gitops/dev/content
-          kustomize edit set image REPLACE_IMAGE_EVENT=$IMAGE_NAME:${IMAGE_TAG}
+          kustomize edit set image REPLACE_IMAGE_CONTENT=$IMAGE_NAME:${IMAGE_TAG}
 
       - name: Commit & push GitOps change
         run: |
