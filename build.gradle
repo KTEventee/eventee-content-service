@@ -35,7 +35,7 @@ repositories {
 }
 
 dependencies {
-	implementation 'eventee.server:common:0.0.4-SNAPSHOT'
+	implementation 'eventee.server:common:0.0.3-SNAPSHOT'
 
 	// 스프링 스타터
 	implementation 'org.springframework.boot:spring-boot-starter'
