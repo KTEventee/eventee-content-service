@@ -1,0 +1,88 @@
+
+
+name: Build & Push Docker Image - content (prod)
+
+on:
+  pull_request:
+    branches:
+      - prod
+    types:
+      - closed
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    environment: prod
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate image tag
+        id: image
+        run: |
+          echo "tag=prod-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Configure Gradle for GitHub Packages
+        run: |
+          mkdir -p ~/.gradle
+          cat <<EOF > ~/.gradle/gradle.properties
+          gpr.user=${{ github.actor }}
+          gpr.token=${{ secrets.COMMON_TOKEN_GITHUB }}
+          EOF
+
+      - name: Grant execute permission for Gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build JAR
+        run: ./gradlew clean bootJar --no-daemon
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push Docker image (ECR)
+        run: |
+          set -euxo pipefail
+          docker build -t \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ steps.image.outputs.tag }} .
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ steps.image.outputs.tag }}
+
+      - name: Notify GitOps repo (deploy prod)
+        if: success()
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITOPS_TOKEN }}" \
+            https://api.github.com/repos/KTEventee/eventee-gitops/dispatches \
+            -d '{
+              "event_type": "deploy-prod",
+              "client_payload": {
+                "service": "content",
+                "image": "'"${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY"'",
+                "tag": "'"${{ steps.image.outputs.tag }}"'"
+              }
+            }'
+
