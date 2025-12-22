@@ -16,6 +16,7 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
+src/main/java/eventee/server/event/global
 
 ### IntelliJ IDEA ###
 .idea
@@ -38,3 +39,5 @@ out/
 .DS_Store
 
 gradle.properties
+src/main/resources/application-local.properties
+docker-compose.yml
