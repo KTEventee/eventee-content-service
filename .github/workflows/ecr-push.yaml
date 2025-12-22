@@ -1,33 +1,35 @@
+
+
 name: Build & Push Docker Image - content (prod)
 
 on:
-  push:
-    branches: [ prod ]
-
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}          # ap-northeast-2
-  ECR_REPOSITORY: eventee-content-service          # ✅ 원하는 ECR repo 이름 (또는 secrets로 빼도 됨)
+  pull_request:
+    branches:
+      - prod
+    types:
+      - closed
 
 permissions:
   contents: read
 
 jobs:
-  build_and_push:
+  build:
+    environment: prod
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
-    outputs:
-      image_uri: ${{ steps.image.outputs.image_uri }}
-      image_tag: ${{ steps.meta.outputs.image_tag }}
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set image tag
-        id: meta
+      - name: Generate image tag
+        id: image
         run: |
-          TAG="prod-${GITHUB_SHA::7}"
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
-          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=prod-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -49,34 +51,38 @@ jobs:
       - name: Build JAR
         run: ./gradlew clean bootJar --no-daemon
 
-      # ✅ IAM User 방식 (Access Key)
-      - name: Configure AWS credentials (Access Key)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set image URI
-        id: image
-        run: |
-          URI="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
-          echo "image_uri=$URI" >> $GITHUB_OUTPUT
-          echo "IMAGE_URI=$URI" >> $GITHUB_ENV
-
-      - name: Ensure ECR repository exists
-        run: |
-          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" >/dev/null 2>&1 || \
-          aws ecr create-repository --repository-name "${ECR_REPOSITORY}" >/dev/null
-
       - name: Build & Push Docker image (ECR)
         run: |
           set -euxo pipefail
-          echo "Shorthand: ${ECR_REPOSITORY}:${IMAGE_TAG}"
-          echo "Pushing:   ${IMAGE_URI}:${IMAGE_TAG}"
-          docker build -t "${IMAGE_URI}:${IMAGE_TAG}" .
-          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+          docker build -t \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ steps.image.outputs.tag }} .
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ steps.image.outputs.tag }}
+
+      - name: Notify GitOps repo (deploy prod)
+        if: success()
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITOPS_TOKEN }}" \
+            https://api.github.com/repos/KTEventee/eventee-gitops/dispatches \
+            -d '{
+              "event_type": "deploy-prod",
+              "client_payload": {
+                "service": "content",
+                "image": "'"${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY"'",
+                "tag": "'"${{ steps.image.outputs.tag }}"'"
+              }
+            }'
+
