@@ -77,7 +77,7 @@ jobs:
               "event_type": "deploy-prod",
               "client_payload": {
                 "service": "content",
-                "image": "'"${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY"'",
+                "image": "'"${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}"'",
                 "tag": "'"${{ steps.image.outputs.tag }}"'"
               }
             }'
