@@ -1,5 +1,7 @@
 package eventee.server.content.domain.comment.controller;
 
+import eventee.server.common.jwt.exception.JwtErrorCode;
+import eventee.server.common.jwt.exception.JwtHandler;
 import eventee.server.content.domain.comment.dto.CommentRequest;
 import eventee.server.content.domain.comment.service.CommentService;
 import eventee.server.common.exception.BaseException;
@@ -7,6 +9,7 @@ import eventee.server.common.exception.BaseResponse;
 import eventee.server.common.exception.codes.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -25,16 +28,15 @@ public class CommentController {
         description = "기존 댓글 내용을 수정합니다. 작성자 본인만 수정할 수 있습니다."
     )
     @PatchMapping
-    public BaseResponse<String> updateComment(@RequestBody CommentRequest.CommentUpdateDto request){
-        try{
-            commentService.updateComment(request);
-            return BaseResponse.onSuccess("success");
-        }catch(BaseException e){
-            return BaseResponse.onFailure(e.getCode(), null);
-        }catch (Exception e){
-            log.warn(e.getMessage());
-            return BaseResponse.onFailure(ErrorCode.BAD_REQUEST, null);
+    public BaseResponse<String> updateComment(
+        HttpServletRequest request,
+        @RequestBody CommentRequest.CommentUpdateDto requestDto){
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
+        commentService.updateComment(requestDto);
+        return BaseResponse.onSuccess("success");
     }
 
     @Operation(
@@ -43,18 +45,14 @@ public class CommentController {
     )
     @PostMapping
     public BaseResponse<String> makeComment(
-        @RequestBody CommentRequest.CommentDto request
-    ){
-        try{
-            Long memberId = null;
-            commentService.makeComment(request, memberId);
-            return BaseResponse.onSuccess("success");
-        }catch(BaseException e){
-            return BaseResponse.onFailure(e.getCode(), null);
-        }catch (Exception e){
-            log.warn(e.getMessage());
-            return BaseResponse.onFailure(ErrorCode.BAD_REQUEST, null);
+        HttpServletRequest request,
+        @RequestBody CommentRequest.CommentDto requestDto){
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
+        commentService.makeComment(requestDto, memberId);
+        return BaseResponse.onSuccess("success");
     }
 
     @Operation(
@@ -62,15 +60,14 @@ public class CommentController {
         description = "특정 댓글을 삭제합니다. 작성자 또는 관리자만 삭제 가능합니다."
     )
     @DeleteMapping("/{commentId}")
-    public BaseResponse<String> deleteComment(@PathVariable long commentId){
-        try{
-            commentService.deleteComment(commentId);
-            return BaseResponse.onSuccess("success");
-        }catch(BaseException e){
-            return BaseResponse.onFailure(e.getCode(), null);
-        }catch (Exception e){
-            log.warn(e.getMessage());
-            return BaseResponse.onFailure(ErrorCode.BAD_REQUEST, null);
+    public BaseResponse<String> deleteComment(
+        HttpServletRequest request,
+        @PathVariable long commentId){
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
+        commentService.deleteComment(commentId);
+        return BaseResponse.onSuccess("success");
     }
 }

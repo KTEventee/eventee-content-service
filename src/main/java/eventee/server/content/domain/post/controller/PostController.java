@@ -1,5 +1,7 @@
 package eventee.server.content.domain.post.controller;
 
+import eventee.server.common.jwt.exception.JwtErrorCode;
+import eventee.server.common.jwt.exception.JwtHandler;
 import eventee.server.content.domain.post.dto.PostRequest;
 import eventee.server.content.domain.post.dto.PostResponse;
 import eventee.server.content.domain.post.dto.VoteLogResponseDto;
@@ -9,6 +11,7 @@ import eventee.server.common.exception.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -36,10 +39,14 @@ public class PostController {
     )
     @PostMapping
     public BaseResponse<PostResponse.PostDto> createPost(
-        @RequestBody @Schema(description = "게시글 생성 요청 DTO") PostRequest.PostDto request
+        HttpServletRequest request,
+        @RequestBody @Schema(description = "게시글 생성 요청 DTO") PostRequest.PostDto requestDto
     ) {
-        Long memberId = null;
-        Post post = postService.makePost(request, memberId);
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
+        }
+        Post post = postService.makePost(requestDto, memberId);
         return BaseResponse.onSuccess(PostResponse.PostDto.from(post, memberId));
     }
 
@@ -60,11 +67,15 @@ public class PostController {
     )
     @PatchMapping("/{postId}")
     public BaseResponse<PostResponse.PostDto> updatePost(
+        HttpServletRequest request,
         @PathVariable @Schema(description = "게시글 ID") Long postId,
-        @RequestBody @Schema(description = "게시글 수정 요청 DTO") PostRequest.PostDto request
+        @RequestBody @Schema(description = "게시글 수정 요청 DTO") PostRequest.PostDto requestDto
     ) {
-        Long memberId = null;
-        PostResponse.PostDto updated = postService.updatePost(request, memberId, postId);
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
+        }
+        PostResponse.PostDto updated = postService.updatePost(requestDto, memberId, postId);
         return BaseResponse.onSuccess(updated);
     }
 
@@ -78,9 +89,13 @@ public class PostController {
     )
     @GetMapping("/{eventId}")
     public BaseResponse<PostResponse.PostListByGroupDto> getPostByEvent(
+        HttpServletRequest request,
         @PathVariable @Schema(description = "이벤트 ID") Long eventId
     ) {
-        Long memberId = null;
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
+        }
         return BaseResponse.onSuccess(postService.getPostByEvent(eventId, memberId));
     }
 
@@ -95,10 +110,14 @@ public class PostController {
     )
     @PostMapping("/vote")
     public BaseResponse<VoteLogResponseDto> vote(
-        @RequestBody @Schema(description = "투표 요청 DTO") PostRequest.VoteDto request
+        HttpServletRequest request,
+        @RequestBody @Schema(description = "투표 요청 DTO") PostRequest.VoteDto requestDto
     ) {
-        Long memberId = null;
-        return BaseResponse.onSuccess(postService.vote(request, memberId));
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
+        }
+        return BaseResponse.onSuccess(postService.vote(requestDto, memberId));
     }
 
 
@@ -111,10 +130,14 @@ public class PostController {
     )
     @PostMapping("/admin")
     public BaseResponse<String> adminPost(
-        @RequestBody @Schema(description = "관리자 게시글 요청 DTO") PostRequest.AdminPostDto request
+        HttpServletRequest request,
+        @RequestBody @Schema(description = "관리자 게시글 요청 DTO") PostRequest.AdminPostDto requestDto
     ) {
-        Long memberId = null;
-        postService.adminPost(request, memberId);
+        Long memberId = (Long) request.getAttribute("memberId");
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
+        }
+        postService.adminPost(requestDto, memberId);
         return BaseResponse.onSuccess("success");
     }
 }

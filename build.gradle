@@ -36,7 +36,7 @@ repositories {
 
 dependencies {
 	// 공통 모듈
-	implementation "eventee.server:common:v0.5.0"
+	implementation "eventee.server:common:v0.6.0"
 
 	// 스프링 스타터
 	implementation 'org.springframework.boot:spring-boot-starter'
@@ -44,6 +44,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 
 	// 롬복
 	compileOnly 'org.projectlombok:lombok'
