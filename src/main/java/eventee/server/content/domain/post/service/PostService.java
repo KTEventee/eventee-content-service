@@ -14,6 +14,8 @@ public interface PostService {
     PostResponse.PostDto
     updatePost(PostRequest.PostDto request,Long memberId,Long postId);
     PostResponse.PostListByGroupDto getPostByEvent(long eventId,Long memberId);
+    PostResponse.PostListByGroupDto getPostByEventGroup(long eventId,long groupId, Long memberId);
+
     VoteLogResponseDto vote(PostRequest.VoteDto request, Long memberId);
 
     void adminPost(PostRequest.AdminPostDto request,Long memberId);

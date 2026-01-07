@@ -8,5 +8,8 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post,Long> {
     Optional<Post> findPostByPostId(Long id);
     List<Post> findPostsByEventId(Long eventId);
+    List<Post> findPostsByEventIdAndGroupId(Long eventId,Long groupId);
     List<Post> findAllByGroupIdAndIsDeletedFalse(Long groupId);
+
+
 }
