@@ -103,6 +103,26 @@ public class PostController {
         return BaseResponse.onSuccess(postService.getPostByEvent(eventId, memberId));
     }
 
+    @Operation(
+            summary = "이벤트 전체 게시글 조회",
+            description = """
+                    이벤트 내 모든 그룹의 게시글을 가져옵니다.
+                    TEXT/VOTE 게시글과 댓글 데이터 포함.
+                    """
+    )
+    @GetMapping("/{eventId}/gourps/{groupId}")
+    public BaseResponse<PostResponse.PostListByGroupDto> getPostByEvent(
+            @PathVariable @Schema(description = "이벤트 ID") Long eventId,
+            @PathVariable @Schema(description = "이벤트 ID") Long groupId,
+            Authentication authentication
+    ) {
+        Long memberId = (Long) authentication.getPrincipal();
+        if (memberId == null) {
+            throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
+        }
+        return BaseResponse.onSuccess(postService.getPostByEventGroup(eventId, groupId, memberId));
+    }
+
 
     @Operation(
         summary = "투표하기",

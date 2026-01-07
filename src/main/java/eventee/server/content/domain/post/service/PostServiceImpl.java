@@ -107,6 +107,11 @@ public class PostServiceImpl implements PostService {
         return PostResponse.PostListByGroupDto.from(posts, memberId);
     }
 
+    public PostResponse.PostListByGroupDto getPostByEventGroup(long eventId,long groupId, Long memberId){
+        List<Post> posts = postRepository.findPostsByEventIdAndGroupId(eventId,groupId);
+        return PostResponse.PostListByGroupDto.from(posts, memberId);
+    }
+
     public VoteLogResponseDto vote(PostRequest.VoteDto request, Long memberId) {
 
         Post post = loadPostById(request.postId());
