@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,9 +41,10 @@ public class PostController {
     @PostMapping
     public BaseResponse<PostResponse.PostDto> createPost(
         HttpServletRequest request,
-        @RequestBody @Schema(description = "게시글 생성 요청 DTO") PostRequest.PostDto requestDto
+        @RequestBody @Schema(description = "게시글 생성 요청 DTO") PostRequest.PostDto requestDto,
+        Authentication authentication
     ) {
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
@@ -69,9 +71,10 @@ public class PostController {
     public BaseResponse<PostResponse.PostDto> updatePost(
         HttpServletRequest request,
         @PathVariable @Schema(description = "게시글 ID") Long postId,
-        @RequestBody @Schema(description = "게시글 수정 요청 DTO") PostRequest.PostDto requestDto
+        @RequestBody @Schema(description = "게시글 수정 요청 DTO") PostRequest.PostDto requestDto,
+        Authentication authentication
     ) {
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
@@ -90,9 +93,10 @@ public class PostController {
     @GetMapping("/{eventId}")
     public BaseResponse<PostResponse.PostListByGroupDto> getPostByEvent(
         HttpServletRequest request,
-        @PathVariable @Schema(description = "이벤트 ID") Long eventId
+        @PathVariable @Schema(description = "이벤트 ID") Long eventId,
+        Authentication authentication
     ) {
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
@@ -111,9 +115,10 @@ public class PostController {
     @PostMapping("/vote")
     public BaseResponse<VoteLogResponseDto> vote(
         HttpServletRequest request,
-        @RequestBody @Schema(description = "투표 요청 DTO") PostRequest.VoteDto requestDto
+        @RequestBody @Schema(description = "투표 요청 DTO") PostRequest.VoteDto requestDto,
+        Authentication authentication
     ) {
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
@@ -131,9 +136,10 @@ public class PostController {
     @PostMapping("/admin")
     public BaseResponse<String> adminPost(
         HttpServletRequest request,
-        @RequestBody @Schema(description = "관리자 게시글 요청 DTO") PostRequest.AdminPostDto requestDto
+        @RequestBody @Schema(description = "관리자 게시글 요청 DTO") PostRequest.AdminPostDto requestDto,
+        Authentication authentication
     ) {
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
