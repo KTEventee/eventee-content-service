@@ -44,7 +44,7 @@ public class PostServiceImpl implements PostService {
 
     @Transactional
     public Post makePost(PostRequest.PostDto request, Long memberId) {
-        Long groupId = null;
+        Long groupId = request.groupId();
         PostType postType = PostType.from(request.type());
 
         String normalizedVoteContent = normalizeContent(request.voteContent());
@@ -62,7 +62,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Transactional
-    public void deletePost(long id) {
+    public void deletePost(Long id) {
         Post post = loadPostById(id);
         postRepository.delete(post);
     }
@@ -97,17 +97,17 @@ public class PostServiceImpl implements PostService {
         return PostResponse.PostDto.from(saved, memberId);
     }
 
-    private Post loadPostById(long id) {
+    private Post loadPostById(Long id) {
         return postRepository.findPostByPostId(id)
             .orElseThrow(() -> new BaseException(ErrorCode.POST_NOT_FOUND));
     }
 
-    public PostResponse.PostListByGroupDto getPostByEvent(long eventId, Long memberId) {
+    public PostResponse.PostListByGroupDto getPostByEvent(Long eventId, Long memberId) {
         List<Post> posts = postRepository.findPostsByEventId(eventId);
         return PostResponse.PostListByGroupDto.from(posts, memberId);
     }
 
-    public PostResponse.PostListByGroupDto getPostByEventGroup(long eventId,long groupId, Long memberId){
+    public PostResponse.PostListByGroupDto getPostByEventGroup(Long eventId,Long groupId, Long memberId){
         List<Post> posts = postRepository.findPostsByEventIdAndGroupId(eventId,groupId);
         return PostResponse.PostListByGroupDto.from(posts, memberId);
     }
