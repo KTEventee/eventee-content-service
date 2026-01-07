@@ -9,12 +9,12 @@ import eventee.server.content.domain.post.model.Post;
 public interface PostService {
 
     Post makePost(PostDto request, Long memberId);
-    void deletePost(long id);
+    void deletePost(Long id);
 
     PostResponse.PostDto
     updatePost(PostRequest.PostDto request,Long memberId,Long postId);
-    PostResponse.PostListByGroupDto getPostByEvent(long eventId,Long memberId);
-    PostResponse.PostListByGroupDto getPostByEventGroup(long eventId,long groupId, Long memberId);
+    PostResponse.PostListByGroupDto getPostByEvent(Long eventId,Long memberId);
+    PostResponse.PostListByGroupDto getPostByEventGroup(Long eventId,Long groupId, Long memberId);
 
     VoteLogResponseDto vote(PostRequest.VoteDto request, Long memberId);
 

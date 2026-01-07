@@ -56,7 +56,7 @@ public class PostController {
     @Operation(summary = "게시글 삭제")
     @DeleteMapping("/{postId}")
     public BaseResponse<String> deletePost(
-        @PathVariable @Schema(description = "게시글 ID") long postId
+        @PathVariable @Schema(description = "게시글 ID") Long postId
     ) {
         postService.deletePost(postId);
         return BaseResponse.onSuccess("success");
