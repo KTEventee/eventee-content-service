@@ -44,7 +44,7 @@ public class PostServiceImpl implements PostService {
 
     @Transactional
     public Post makePost(PostRequest.PostDto request, Long memberId) {
-        Long groupId = null;
+        Long groupId = request.groupId();
         PostType postType = PostType.from(request.type());
 
         String normalizedVoteContent = normalizeContent(request.voteContent());
