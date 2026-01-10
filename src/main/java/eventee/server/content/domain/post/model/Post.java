@@ -27,6 +27,8 @@ public class Post extends BaseEntity {
     private Long postId;
 
     private Long memberId;
+
+    @Column(name = "writer_nickname", nullable = false)
     private String writerNickname;
 
     private String content;
