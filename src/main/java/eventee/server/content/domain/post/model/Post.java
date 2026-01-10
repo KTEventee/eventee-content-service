@@ -27,6 +27,7 @@ public class Post extends BaseEntity {
     private Long postId;
 
     private Long memberId;
+    private String writerNickname;
 
     private String content;
     private String voteTitle = null;
@@ -64,12 +65,23 @@ public class Post extends BaseEntity {
     }
 
     @Builder
-    public Post(String content, PostType type, Long groupId, String voteTitle, String voteContent,Long eventId, Long memberId){
+    public Post(
+            String content,
+            PostType type,
+            Long groupId,
+            String voteTitle,
+            String voteContent,
+            Long eventId,
+            Long memberId,
+            String writerNickname 
+    ){
         this.content = content;
         this.postType = type;
         this.memberId = memberId;
+        this.writerNickname = writerNickname;
         this.eventId = eventId;
         this.groupId = groupId;
+
         if(this.postType.equals(PostType.VOTE)) {
             this.voteTitle = voteTitle;
             this.voteContent = voteContent;
@@ -77,37 +89,24 @@ public class Post extends BaseEntity {
     }
 
     public void updatePost(PostRequest.PostDto dto) {
-        // content는 프론트가 빈 문자열 보내면 빈 문자열이 맞음 (유지 X)
         if (dto.content() != null) {
             this.content = dto.content();
         }
 
-        // type 변경 요청이 있을 때만 변경
         if (dto.type() != null) {
             this.postType = PostType.from(dto.type());
         }
 
-        // 투표 게시글일 경우
         if (this.postType == PostType.VOTE) {
-
-            // title이 null이면 기존 유지
             if (dto.voteTitle() != null) {
                 this.voteTitle = dto.voteTitle();
             }
-
-            // content가 null이면 기존 유지
             if (dto.voteContent() != null) {
                 this.voteContent = dto.voteContent();
             }
-
         } else {
-            // 일반 게시글로 변경될 때만 vote 필드 제거
             this.voteTitle = null;
             this.voteContent = null;
         }
     }
-
-
-
-
 }

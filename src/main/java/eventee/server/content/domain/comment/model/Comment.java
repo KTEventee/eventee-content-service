@@ -23,6 +23,7 @@ public class Comment extends BaseEntity {
     @Column(name = "comment_id")
     private Long commentId;
     private Long writerId;
+    private String writerNickname;
     private String content;
 
     @ManyToOne

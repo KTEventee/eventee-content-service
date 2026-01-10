@@ -36,7 +36,7 @@ repositories {
 
 dependencies {
 	// 공통 모듈
-	implementation "eventee.server:common:v0.6.0"
+	implementation "eventee.server:common:v0.6.3"
 
 	// 스프링 스타터
 	implementation 'org.springframework.boot:spring-boot-starter'
