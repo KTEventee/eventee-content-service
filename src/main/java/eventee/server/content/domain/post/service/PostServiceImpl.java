@@ -74,6 +74,7 @@ public class PostServiceImpl implements PostService {
         Post post = Post.builder()
                 .content(request.content())
                 .type(postType)
+                .eventId(request.eventId())
                 .groupId(request.groupId())
                 .memberId(memberId)
                 .voteTitle(voteTitle)
