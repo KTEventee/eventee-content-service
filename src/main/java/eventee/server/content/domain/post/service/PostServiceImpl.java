@@ -28,9 +28,6 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final VoteLogRepository voteLogRepository;
 
-    /* ======================
-       내부 유틸
-    ====================== */
 
     private String normalizeVoteContent(String voteContent) {
         if (voteContent == null) return null;
@@ -59,6 +56,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public Post makePost(PostRequest.PostDto request, Long memberId, String writerNickname) {
+
         PostType postType = PostType.from(request.type());
 
         String normalizedVoteContent = normalizeVoteContent(request.voteContent());
@@ -68,10 +66,10 @@ public class PostServiceImpl implements PostService {
         Post post = Post.builder()
                 .content(request.content())
                 .type(postType)
-                .groupId(request.groupId())      // ✅ groupId 반영
-                .eventId(request.eventId())      // ✅ eventId 반영
+                .groupId(request.groupId())      
+                .eventId(request.eventId())      
                 .memberId(memberId)
-                .writerNickname(writerNickname)  // ✅ setter 없이 저장
+                .writerNickname(writerNickname)  
                 .voteTitle(voteTitle)
                 .voteContent(voteContent)
                 .build();
@@ -85,7 +83,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void deletePost(long id) {
+    public void deletePost(Long id) {
         Post post = loadPostById(id);
         postRepository.delete(post);
     }
@@ -122,6 +120,7 @@ public class PostServiceImpl implements PostService {
         return PostResponse.PostDto.from(saved, memberId);
     }
 
+
     /* ======================
        게시글 조회
     ====================== */
@@ -129,6 +128,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public PostResponse.PostListByGroupDto getPostByEvent(long eventId, Long memberId) {
+
         List<Post> posts = postRepository.findPostsByEventId(eventId);
         return PostResponse.PostListByGroupDto.from(posts, memberId);
     }

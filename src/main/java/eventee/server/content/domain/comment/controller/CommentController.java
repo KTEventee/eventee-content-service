@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,9 +30,9 @@ public class CommentController {
     )
     @PatchMapping
     public BaseResponse<String> updateComment(
-        HttpServletRequest request,
+            HttpServletRequest request, Authentication authentication,
         @RequestBody CommentRequest.CommentUpdateDto requestDto){
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
@@ -46,8 +47,9 @@ public class CommentController {
     @PostMapping
     public BaseResponse<String> makeComment(
         HttpServletRequest request,
+        Authentication authentication,
         @RequestBody CommentRequest.CommentDto requestDto){
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
@@ -62,8 +64,9 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public BaseResponse<String> deleteComment(
         HttpServletRequest request,
+        Authentication authentication,
         @PathVariable long commentId){
-        Long memberId = (Long) request.getAttribute("memberId");
+        Long memberId = (Long) authentication.getPrincipal();
         if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }

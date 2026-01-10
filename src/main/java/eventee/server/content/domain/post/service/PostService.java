@@ -8,6 +8,7 @@ import eventee.server.content.domain.post.model.Post;
 
 public interface PostService {
 
+
     /* ======================
        게시글 생성
        ====================== */
@@ -38,6 +39,7 @@ public interface PostService {
             long eventId,
             Long memberId
     );
+
 
     /* ======================
        투표
