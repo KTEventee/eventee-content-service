@@ -16,38 +16,37 @@ public class PostResponse {
 
     @Schema(description = "투표 옵션 DTO")
     public record VoteOptionDto(
-        @Schema(description = "옵션 번호", example = "1") int optionNo,
-        @Schema(description = "옵션 텍스트", example = "짜장면") String text,
-        @Schema(description = "득표 수", example = "12") int votes,
-        @Schema(description = "득표 비율 (%)", example = "60") int percent,
-        @Schema(description = "내가 선택한 옵션 여부", example = "true") boolean isMine
+            @Schema(description = "옵션 번호", example = "1") int optionNo,
+            @Schema(description = "옵션 텍스트", example = "짜장면") String text,
+            @Schema(description = "득표 수", example = "12") int votes,
+            @Schema(description = "득표 비율 (%)", example = "60") int percent,
+            @Schema(description = "내가 선택한 옵션 여부", example = "true") boolean isMine
     ) {}
 
     @Schema(description = "게시글 DTO")
     public record PostDto(
-        @Schema(description = "게시글 ID", example = "10") long postId,
-        @Schema(description = "내용") String content,
-        @Schema(description = "작성자 ID") Long writerId,
-        @Schema(description = "게시글 타입 (text, vote)") String type,
-        @Schema(description = "투표 질문") String voteTitle,
-        @Schema(description = "투표 옵션 리스트") List<VoteOptionDto> voteOptions,
-        @Schema(description = "댓글 리스트") List<CommentResponse.CommentDto> comments,
-        @Schema(description = "내가 작성한 글인지 여부") boolean isWrite
+            @Schema(description = "게시글 ID", example = "10") long postId,
+            @Schema(description = "내용") String content,
+            @Schema(description = "작성자 ID") Long writerId,
+            @Schema(description = "작성자 닉네임") String writerNickname,
+            @Schema(description = "게시글 타입 (text, vote)") String type,
+            @Schema(description = "투표 질문") String voteTitle,
+            @Schema(description = "투표 옵션 리스트") List<VoteOptionDto> voteOptions,
+            @Schema(description = "댓글 리스트") List<CommentResponse.CommentDto> comments,
+            @Schema(description = "내가 작성한 글인지 여부") boolean isWrite
     ) {
-
         public static PostDto from(Post post, Long memberId) {
 
             List<CommentResponse.CommentDto> comments =
-                CommentResponse.CommentDto.from(post.getComments(), memberId);
+                    CommentResponse.CommentDto.from(post.getComments(), memberId);
 
             List<VoteOptionDto> voteOptionDtos = new ArrayList<>();
 
+            // 투표 게시글이면 옵션/득표 계산
             if (post.getPostType() == PostType.VOTE) {
-
-                // 안정적인 옵션 파싱 (공백/쉼표 여러 형태 모두 처리)
                 String[] options = post.getVoteContent() != null
-                    ? post.getVoteContent().split("\\s*,\\s*")
-                    : new String[0];
+                        ? post.getVoteContent().split("_")
+                        : new String[0];
 
                 List<VoteLog> logs = post.getVoteLogs();
                 int totalVotes = logs.size();
@@ -57,56 +56,55 @@ public class PostResponse {
                     String text = options[i];
 
                     int votes = (int) logs.stream()
-                        .filter(v -> v.getVoteNum() == optionNo)
-                        .count();
+                            .filter(v -> v.getVoteNum() == optionNo)
+                            .count();
 
                     int percent = totalVotes > 0
-                        ? (int) Math.round((votes * 100.0) / totalVotes)
-                        : 0;
+                            ? (int) Math.round((votes * 100.0) / totalVotes)
+                            : 0;
 
                     boolean isMine = logs.stream()
-                        .anyMatch(v ->
-                            v.getMemberId().equals(memberId) &&
-                                v.getVoteNum() == optionNo
-                        );
+                            .anyMatch(v ->
+                                    v.getMemberId().equals(memberId) &&
+                                            v.getVoteNum() == optionNo
+                            );
 
                     voteOptionDtos.add(
-                        new VoteOptionDto(optionNo, text, votes, percent, isMine)
+                            new VoteOptionDto(optionNo, text, votes, percent, isMine)
                     );
                 }
             }
 
-
             return new PostDto(
-                post.getPostId(),
-                post.getContent(),
-                post.getMemberId(),
-                post.getPostType().type.toLowerCase(),
-                post.getVoteTitle(),
-                voteOptionDtos,
-                comments,
+                    post.getPostId(),
+                    post.getContent(),
+                    post.getMemberId(),
+                    post.getWriterNickname(),
+                    post.getPostType().type.toLowerCase(),
+                    post.getVoteTitle(),
+                    voteOptionDtos,
+                    comments,
                     post.getMemberId().equals(memberId)
             );
         }
 
-
         public static List<PostDto> from(List<Post> posts, Long memberId) {
             return posts.stream()
-                .map(post -> PostDto.from(post, memberId))
-                .collect(Collectors.toList());
+                    .map(p -> PostDto.from(p, memberId))
+                    .toList();
         }
     }
 
     @Schema(description = "그룹별 게시글 리스트 DTO")
     public record PostListDto(
-            @Schema(description = "그룹 번호", example = "1") Long groupNum,
+            @Schema(description = "그룹 번호(또는 그룹 ID)", example = "1") Long groupNum,
             @Schema(description = "게시글 리스트") List<PostDto> posts
     ) {
         public static PostListDto of(Long groupNum, List<Post> posts, Long memberId) {
             return new PostListDto(
                     groupNum,
                     posts.stream()
-                            .map(post -> PostDto.from(post, memberId))
+                            .map(p -> PostDto.from(p, memberId))
                             .toList()
             );
         }
@@ -123,7 +121,7 @@ public class PostResponse {
 
             List<PostListDto> listDtos = grouped.entrySet().stream()
                     .map(entry -> PostListDto.of(
-                            entry.getKey(),
+                            entry.getKey(),     // groupId (기존 코드 그대로 유지)
                             entry.getValue(),
                             memberId
                     ))

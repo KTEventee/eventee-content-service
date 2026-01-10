@@ -1,5 +1,7 @@
 package eventee.server.content.domain.post.service;
 
+import eventee.server.common.exception.BaseException;
+import eventee.server.common.exception.codes.ErrorCode;
 import eventee.server.content.domain.post.dto.PostRequest;
 import eventee.server.content.domain.post.dto.PostResponse;
 import eventee.server.content.domain.post.dto.VoteLogResponseDto;
@@ -8,8 +10,6 @@ import eventee.server.content.domain.post.model.PostType;
 import eventee.server.content.domain.post.model.VoteLog;
 import eventee.server.content.domain.post.repository.PostRepository;
 import eventee.server.content.domain.post.repository.VoteLogRepository;
-import eventee.server.common.exception.BaseException;
-import eventee.server.common.exception.codes.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,114 +28,162 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final VoteLogRepository voteLogRepository;
 
-    private String normalizeContent(String content) {
-        if (content == null) return null;
-        if (content.contains(",")) return content.replace(",", "_");
-        return content;
+    /* ======================
+       내부 유틸
+    ====================== */
+
+    private String normalizeVoteContent(String voteContent) {
+        if (voteContent == null) return null;
+        return voteContent.contains(",")
+                ? voteContent.replace(",", "_")
+                : voteContent;
     }
 
     private String[] parseOptions(String voteContent) {
         if (voteContent == null) return new String[0];
-        if (voteContent.contains(",")) return Arrays.stream(voteContent.split(","))
-            .map(String::trim).toArray(String[]::new);
         return Arrays.stream(voteContent.split("_"))
-            .map(String::trim).toArray(String[]::new);
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toArray(String[]::new);
     }
 
+    private Post loadPostById(Long postId) {
+        return postRepository.findPostByPostId(postId)
+                .orElseThrow(() -> new BaseException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    /* ======================
+       게시글 생성
+    ====================== */
+
+    @Override
     @Transactional
-    public Post makePost(PostRequest.PostDto request, Long memberId) {
-        Long groupId = request.groupId();
+    public Post makePost(PostRequest.PostDto request,
+                         Long memberId) {
+
         PostType postType = PostType.from(request.type());
 
-        String normalizedVoteContent = normalizeContent(request.voteContent());
+        String voteContent = (postType == PostType.VOTE)
+                ? normalizeVoteContent(request.voteContent())
+                : null;
+
+        String voteTitle = (postType == PostType.VOTE)
+                ? request.voteTitle()
+                : null;
 
         Post post = Post.builder()
-            .content(request.content())
-            .type(postType)
-            .groupId(groupId)
-                .eventId(request.eventId())
-            .memberId(memberId)
-            .voteTitle(request.voteTitle())
-            .voteContent(normalizedVoteContent)
-            .build();
+                .content(request.content())
+                .type(postType)
+                .groupId(request.groupId())
+                .memberId(memberId)
+                .voteTitle(voteTitle)
+                .voteContent(voteContent)
+                .writerNickname(request.writerNickname())
+                .build();
+
         return postRepository.save(post);
     }
 
+    /* ======================
+       게시글 삭제
+    ====================== */
+
+    @Override
     @Transactional
-    public void deletePost(Long id) {
-        Post post = loadPostById(id);
+    public void deletePost(Long postId) {
+        Post post = loadPostById(postId);
         postRepository.delete(post);
     }
 
+    /* ======================
+       게시글 수정
+    ====================== */
+
+    @Override
     @Transactional
-    public PostResponse.PostDto updatePost(PostRequest.PostDto request, Long memberId, Long postId) {
+    public PostResponse.PostDto updatePost(PostRequest.PostDto request,
+                                           Long memberId,
+                                           Long postId) {
 
         Post post = loadPostById(postId);
 
-        String normalizedType = request.type() != null
-            ? request.type().trim().toUpperCase()
-            : post.getPostType().name();
+        String normalizedType = (request.type() != null)
+                ? request.type().trim().toUpperCase()
+                : post.getPostType().name();
 
-        String voteTitle = normalizedType.equals("VOTE") ? request.voteTitle() : null;
-
-        String voteContent = normalizedType.equals("VOTE")
-            ? normalizeContent(request.voteContent())
-            : null;
+        boolean isVote = "VOTE".equals(normalizedType);
 
         PostRequest.PostDto normalizedRequest = new PostRequest.PostDto(
-            request.groupId(),
-            request.eventId(),
-            normalizedType,
-            request.content(),
-            voteTitle,
-            voteContent
+                post.getGroupId(),
+                null,
+                normalizedType,
+                request.content(),
+                request.writerNickname(),
+                isVote ? request.voteTitle() : null,
+                isVote ? normalizeVoteContent(request.voteContent()) : null
         );
 
         post.updatePost(normalizedRequest);
-        Post saved = postRepository.save(post);
+        postRepository.save(post);
 
-        return PostResponse.PostDto.from(saved, memberId);
+        return PostResponse.PostDto.from(post, memberId);
     }
 
-    private Post loadPostById(Long id) {
-        return postRepository.findPostByPostId(id)
-            .orElseThrow(() -> new BaseException(ErrorCode.POST_NOT_FOUND));
-    }
+    /* ======================
+       이벤트 게시글 조회
+    ====================== */
 
-    public PostResponse.PostListByGroupDto getPostByEvent(Long eventId, Long memberId) {
+    @Override
+    @Transactional(readOnly = true)
+    public PostResponse.PostListByGroupDto getPostByEvent(Long eventId,
+                                                          Long memberId) {
+
         List<Post> posts = postRepository.findPostsByEventId(eventId);
         return PostResponse.PostListByGroupDto.from(posts, memberId);
     }
 
-    public PostResponse.PostListByGroupDto getPostByEventGroup(Long eventId,Long groupId, Long memberId){
-        List<Post> posts = postRepository.findPostsByEventIdAndGroupId(eventId,groupId);
-        return PostResponse.PostListByGroupDto.from(posts, memberId);
-    }
+    /* ======================
+       투표
+    ====================== */
 
-    public VoteLogResponseDto vote(PostRequest.VoteDto request, Long memberId) {
+    @Override
+    @Transactional
+    public VoteLogResponseDto vote(PostRequest.VoteDto request,
+                                   Long memberId) {
 
         Post post = loadPostById(request.postId());
 
-        if (!post.getPostType().equals(PostType.VOTE)) {
+        if (post.getPostType() != PostType.VOTE) {
             throw new BaseException(ErrorCode.POST_TYPE_NOT_VOTE);
         }
 
-        Optional<VoteLog> checkLog = voteLogRepository.findVoteLogByMemberIdAndPost(memberId, post);
-        if (checkLog.isPresent()) throw new BaseException(ErrorCode.VOTE_ALREADY_DO);
+        Optional<VoteLog> exists =
+                voteLogRepository.findVoteLogByMemberIdAndPost(memberId, post);
+
+        if (exists.isPresent()) {
+            throw new BaseException(ErrorCode.VOTE_ALREADY_DO);
+        }
 
         String[] options = parseOptions(post.getVoteContent());
 
-        int num = 0;
+        int voteNum = 0;
         for (int i = 0; i < options.length; i++) {
-            if (options[i].equals(request.voteText())) num = i + 1;
+            if (options[i].equals(request.voteText())) {
+                voteNum = i + 1;
+                break;
+            }
+        }
+
+        if (voteNum == 0) {
+            throw new BaseException(ErrorCode.POST_TYPE_NOT_VOTE);
         }
 
         VoteLog log = VoteLog.builder()
-            .post(post)
-            .memberId(memberId)
-            .voteNum(num)
-            .word(request.voteText())
-            .build();
+                .post(post)
+                .memberId(memberId)
+                .voteNum(voteNum)
+                .word(request.voteText())
+                .build();
 
         post.addVoteLog(log);
 
@@ -145,30 +193,47 @@ public class PostServiceImpl implements PostService {
         return VoteLogResponseDto.from(post.getVoteLogs(), memberId);
     }
 
+    /* ======================
+       관리자 게시글
+    ====================== */
+
+    @Override
     @Transactional
-    public void adminPost(PostRequest.AdminPostDto request, Long memberId) {
+    public void adminPost(PostRequest.AdminPostDto request,
+                          Long memberId,
+                          String writerNickname) {
 
         List<Long> groupIds = Arrays.stream(request.groupNums().split("_"))
-            .map(Long::parseLong)
-            .toList();
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .map(Long::parseLong)
+                .toList();
 
         PostType postType = PostType.from(request.type());
 
-        String normalizedVoteContent = normalizeContent(request.voteContent());
+        String voteContent = (postType == PostType.VOTE)
+                ? normalizeVoteContent(request.voteContent())
+                : null;
+
+        String voteTitle = (postType == PostType.VOTE)
+                ? request.voteTitle()
+                : null;
 
         List<Post> posts = new ArrayList<>();
 
-        groupIds.forEach(g -> {
+        for (Long groupId : groupIds) {
             Post post = Post.builder()
-                .content(request.content())
-                .type(postType)
-                .groupId(g)
-                .memberId(memberId)
-                .voteTitle(request.voteTitle())
-                .voteContent(normalizedVoteContent)
-                .build();
+                    .content(request.content())
+                    .type(postType)
+                    .groupId(groupId)
+                    .memberId(memberId)
+                    .voteTitle(voteTitle)
+                    .voteContent(voteContent)
+                    .build();
+
+            post.setWriterNickname(writerNickname);
             posts.add(post);
-        });
+        }
 
         postRepository.saveAll(posts);
     }

@@ -23,7 +23,9 @@ public class PostRequest {
             String voteTitle,
 
             @Schema(description = "투표 항목들( '_'로 구분)", example = "치킨, 피자, 햄버거")
-            String voteContent
+            String voteContent,
+
+             String writerNickname
     ) {}
 
     @Schema(description = "게시글 수정 요청 DTO")
