@@ -32,13 +32,11 @@ public class PostController {
             @RequestBody PostRequest.PostDto requestDto
     ) {
         Long memberId = (Long) request.getAttribute("memberId");
-        String nickname = (String) request.getAttribute("nickname");
-
-        if (memberId == null || nickname == null) {
+        if (memberId == null) {
             throw new JwtHandler(JwtErrorCode.JWT_MISSING_TOKEN);
         }
 
-        Post post = postService.makePost(requestDto, memberId, nickname);
+        Post post = postService.makePost(requestDto, memberId);
         return BaseResponse.onSuccess(PostResponse.PostDto.from(post, memberId));
     }
 

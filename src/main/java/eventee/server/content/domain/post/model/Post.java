@@ -109,4 +109,8 @@ public class Post extends BaseEntity {
             this.voteContent = null;
         }
     }
+
+    public void setWriterNickname(String writerNickname) {
+        this.writerNickname = writerNickname;
+    }
 }

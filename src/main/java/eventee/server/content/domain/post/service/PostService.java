@@ -8,54 +8,22 @@ import eventee.server.content.domain.post.model.Post;
 
 public interface PostService {
 
+    Post makePost(PostRequest.PostDto request,
+                  Long memberId);
 
-    /* ======================
-       게시글 생성
-       ====================== */
-    Post makePost(
-            PostRequest.PostDto request,
-            Long memberId,
-            String writerNickname
-    );
+    void deletePost(Long postId);
 
-    /* ======================
-       게시글 삭제
-       ====================== */
-    void deletePost(long postId);
+    PostResponse.PostDto updatePost(PostRequest.PostDto request,
+                                    Long memberId,
+                                    Long postId);
 
-    /* ======================
-       게시글 수정
-       ====================== */
-    PostResponse.PostDto updatePost(
-            PostRequest.PostDto request,
-            Long memberId,
-            Long postId
-    );
+    PostResponse.PostListByGroupDto getPostByEvent(Long eventId,
+                                                   Long memberId);
 
-    /* ======================
-       이벤트 내 게시글 조회
-       ====================== */
-    PostResponse.PostListByGroupDto getPostByEvent(
-            long eventId,
-            Long memberId
-    );
+    VoteLogResponseDto vote(PostRequest.VoteDto request,
+                            Long memberId);
 
-
-    /* ======================
-       투표
-       ====================== */
-    VoteLogResponseDto vote(
-            PostRequest.VoteDto request,
-            Long memberId
-    );
-
-    /* ======================
-       관리자 게시글 등록
-       ====================== */
-    void adminPost(
-            PostRequest.AdminPostDto request,
-            Long memberId,
-            String writerNickname
-    );
+    void adminPost(PostRequest.AdminPostDto request,
+                   Long memberId,
+                   String writerNickname);
 }
-
